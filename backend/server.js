@@ -1,5 +1,4 @@
 // index.js
-
 import 'dotenv/config';               // Loads variables from .env into process.env
 import express from 'express';
 import mongoose from 'mongoose';
@@ -17,7 +16,22 @@ const PORT       = process.env.PORT || 5000;
 // Connect to MongoDB
 mongoose
   .connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('MongoDB connected'))
+  .then(() => {
+    console.log('MongoDB connected');
+    
+    // Fix for the duplicate username index error
+    // This will run once after connection is established
+    mongoose.connection.once('open', async () => {
+      try {
+        // Try to drop the problematic username index
+        await mongoose.connection.db.collection('users').dropIndex('username_1');
+        console.log('✅ Dropped username index successfully');
+      } catch (error) {
+        // Index might not exist or already dropped - that's okay
+        console.log('ℹ️ Username index cleanup:', error.message);
+      }
+    });
+  })
   .catch((err) => console.error('MongoDB connection error:', err));
 
 app.use(cors());
