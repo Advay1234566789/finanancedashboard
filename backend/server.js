@@ -7,7 +7,7 @@ import { verifyToken } from './middleware/auth.js';
 const app = express();
 
 // Inline your Mongo URI and JWT secret here
-const MONGO_URI = mongodb+srv://advay:advay@cluster0.gsco8.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+const MONGO_URI = 'mongodb+srv://advay:advay@cluster0.gsco8.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 const JWT_SECRET = 'abc123';
 
 // Connect to MongoDB
