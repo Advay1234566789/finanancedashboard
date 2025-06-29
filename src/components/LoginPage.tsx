@@ -20,38 +20,53 @@ export default function LoginPage() {
   const handleChange = e => setData(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
   const handleSubmit = async e => {
-    e.preventDefault();
-    setLoading(true);
+  e.preventDefault();
+  setLoading(true);
 
-    // Use absolute backend URL or proxy
-    const endpoint = isLogin
-      ? 'https://financial-analytics-dashboard-4vnz.onrender.com/api/auth/login'
-      : 'https://financial-analytics-dashboard-4vnz.onrender.com/api/auth/register';
+  const endpoint = isLogin
+    ? 'https://finanancedashboard.onrender.com/api/auth/login'
+    : 'https://finanancedashboard.onrender.com/api/auth/register';
 
-    try {
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.message || 'Unknown error');
-
-      if (isLogin) {
-        login(result.token);
-        toast({ title: 'Login successful' });
-        nav('/dashboard');
-      } else {
-        toast({ title: 'Registration successful', description: 'Check your email.' });
-        setIsLogin(true);
+  // Construct payload
+  const payload = isLogin
+    ? {
+        email: data.email,
+        password: data.password
       }
-    } catch (err) {
-      toast({ title: 'Error', description: err.message });
-    } finally {
-      setLoading(false);
+    : {
+        username: `${data.firstName}${data.lastName}`.toLowerCase(), // <-- generate username
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        password: data.password,
+        confirmPassword: data.confirmPassword
+      };
+
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message || 'Unknown error');
+
+    if (isLogin) {
+      login(result.token);
+      toast({ title: 'Login successful' });
+      nav('/dashboard');
+    } else {
+      toast({ title: 'Registration successful', description: 'Check your email.' });
+      setIsLogin(true);
     }
-  };
+  } catch (err) {
+    toast({ title: 'Error', description: err.message });
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-indigo-950 via-purple-900 to-slate-900 relative overflow-hidden">
