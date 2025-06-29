@@ -1,4 +1,3 @@
-// index.js
 import 'dotenv/config';               // Loads variables from .env into process.env
 import express from 'express';
 import mongoose from 'mongoose';
@@ -17,8 +16,13 @@ const PORT       = process.env.PORT || 5000;
 const userSchema = new mongoose.Schema({
   firstName: { type: String, required: true },
   lastName:  { type: String, required: true },
-  email:     { type: String, required: true, unique: true },
-  username:  { type: String },
+  email:     { type: String, required: true, unique: true, trim: true },
+  username:  { 
+    type: String, 
+    required: true,           // now mandatory
+    unique: true, 
+    trim: true 
+  },
   password:  { type: String, required: true }
 });
 
@@ -35,11 +39,12 @@ userSchema.methods.matchPassword = function(plain) {
   return bcrypt.compare(plain, this.password);
 };
 
-// Ensure unique usernames only when provided
-userSchema.index(
-  { username: 1 },
-  { unique: true, sparse: true }
-);
+// (If you ever need to allow null usernames instead of making it required,
+// drop the `required: true` above and use a sparse or partial index instead)
+// userSchema.index(
+//   { username: 1 },
+//   { unique: true, sparse: true }
+// );
 
 const User = mongoose.model('User', userSchema);
 
@@ -52,18 +57,19 @@ function getSecret(req) {
 
 export const verifyToken = async (req, res, next) => {
   const authHeader = req.header('Authorization');
-  if (!authHeader) return res.status(401).json({ message: 'No token, authorization denied' });
+  if (!authHeader)
+    return res.status(401).json({ message: 'No token, authorization denied' });
 
   const token = authHeader.startsWith('Bearer ')
     ? authHeader.slice(7)
     : authHeader;
-
-  if (!token) return res.status(401).json({ message: 'No token, authorization denied' });
+  if (!token)
+    return res.status(401).json({ message: 'No token, authorization denied' });
 
   try {
     const decoded = jwt.verify(token, getSecret(req));
     const user = await User.findById(decoded.id).select('-password');
-    if (!user) return res.status(401).json({ message: 'Token is not valid' });
+    if (!user) throw new Error();
     req.user = user;
     next();
   } catch (err) {
@@ -76,7 +82,7 @@ export const verifyToken = async (req, res, next) => {
 };
 
 // ————————————————————————————————————————————————————————————————————————————————
-// 3. Connect to MongoDB & Drop Bad Index Once
+// 3. Connect to MongoDB & Drop Old Index (if present)
 // ————————————————————————————————————————————————————————————————————————————————
 mongoose
   .connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
@@ -103,28 +109,41 @@ app.use(express.json());
 app.set('jwt-secret', JWT_SECRET);
 
 // ————————————————————————————————————————————————————————————————————————————————
-// 5. Authentication Routes (in‑file, replacing authRoutes import)
+// 5. Authentication Routes
 // ————————————————————————————————————————————————————————————————————————————————
 
 // @route   POST /api/auth/register
 // @desc    Create a new user & return a JWT
 app.post('/api/auth/register', async (req, res) => {
   const { firstName, lastName, email, username, password, confirmPassword } = req.body;
-  if (password !== confirmPassword) {
-    return res.status(400).json({ message: 'Passwords must match' });
-  }
+  if (!username)
+    return res.status(400).json({ message: 'Username is required.' });
+  if (password !== confirmPassword)
+    return res.status(400).json({ message: 'Passwords must match.' });
+
   try {
-    const exists = await User.findOne({ email });
-    if (exists) return res.status(400).json({ message: 'Email already in use' });
+    if (await User.findOne({ email }))
+      return res.status(400).json({ message: 'Email already in use.' });
+    if (await User.findOne({ username }))
+      return res.status(400).json({ message: 'Username already in use.' });
 
     const user = new User({ firstName, lastName, email, username, password });
     await user.save();
 
     const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '7d' });
-    res.status(201).json({ token, user: { id: user._id, email, firstName, lastName, username } });
+    res.status(201).json({
+      token,
+      user: { 
+        id: user._id,
+        firstName,
+        lastName,
+        email,
+        username
+      }
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error.' });
   }
 });
 
@@ -134,14 +153,23 @@ app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
   try {
     const user = await User.findOne({ email });
-    if (!user || !(await user.matchPassword(password))) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
+    if (!user || !(await user.matchPassword(password)))
+      return res.status(401).json({ message: 'Invalid credentials.' });
+
     const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: user._id, email, firstName: user.firstName, lastName: user.lastName, username: user.username } });
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        username: user.username
+      }
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error.' });
   }
 });
 
