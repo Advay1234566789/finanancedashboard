@@ -255,6 +255,9 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
 
+    // Debug: log the outgoing payload
+    console.log('Sending registration data:', data);
+
     // Use absolute backend URL or proxy
     const endpoint = isLogin
       ? 'https://finanancedashboard.onrender.com/api/auth/login'
@@ -299,7 +302,7 @@ export default function LoginPage() {
         {[...Array(20)].map((_, i) => (
           <div
             key={i}
-            className={`absolute w-1 h-1 bg-white/20 rounded-full animate-pulse`}
+            className="absolute w-1 h-1 bg-white/20 rounded-full animate-pulse"
             style={{
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
