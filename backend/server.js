@@ -11,7 +11,7 @@ const MONGO_URI = process.env.MONGO_URI;
 const JWT_SECRET = process.env.JWT_SECRET;
 
 // Connect to MongoDB
-gmongoose.connect(MONGO_URI, {
+mongoose.connect(MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
@@ -24,8 +24,8 @@ app.use(express.json());
 
 // User Schema & Model
 const userSchema = new mongoose.Schema({
-  firstName: { type: String, required: false },
-  lastName: { type: String, required: false },
+  firstName: { type: String },
+  lastName: { type: String },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
 }, { timestamps: true });
@@ -33,7 +33,7 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema);
 
 // Helper to generate JWT
-default function generateToken(user) {
+function generateToken(user) {
   return jwt.sign(
     { id: user._id, email: user.email },
     JWT_SECRET,
@@ -86,7 +86,7 @@ app.post('/api/auth/login', async (req, res) => {
 // Protected route example
 app.get('/api/dashboard', (req, res) => {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!authHeader?.startsWith('Bearer ')) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
   const token = authHeader.split(' ')[1];
