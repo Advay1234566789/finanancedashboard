@@ -48,21 +48,10 @@ function generateToken(user) {
 // REGISTER
 app.post('/api/auth/register', async (req, res) => {
   try {
-    // pull & normalize
-    const {
-      username,
-      firstName,
-      lastName,
-      email: rawEmail,
-      password,
-      confirmPassword
-    } = req.body;
-
+    const { username, firstName, lastName, email: rawEmail, password, confirmPassword } = req.body;
     const email = rawEmail?.trim().toLowerCase();
-
     console.log('Register attempt:', { email, username, firstName, lastName });
 
-    // basic validations
     if (!email || !password || !confirmPassword) {
       return res.status(400).json({ message: 'Email and passwords are required' });
     }
@@ -70,7 +59,6 @@ app.post('/api/auth/register', async (req, res) => {
       return res.status(400).json({ message: "Passwords don't match" });
     }
 
-    // check username uniqueness (if provided)
     if (username) {
       const existsUsername = await User.findOne({ username });
       if (existsUsername) {
@@ -78,29 +66,18 @@ app.post('/api/auth/register', async (req, res) => {
       }
     }
 
-    // check email uniqueness
     const existsEmail = await User.findOne({ email });
     if (existsEmail) {
       return res.status(400).json({ message: 'Email already in use' });
     }
 
-    // hash + save
-    const salt = bcrypt.genSaltSync(10);
-    const hash = bcrypt.hashSync(password, salt);
-    const newUser = new User({
-      username: username || undefined,
-      firstName,
-      lastName,
-      email,
-      password: hash
-    });
-
+    const hash = bcrypt.hashSync(password, bcrypt.genSaltSync(10));
+    const newUser = new User({ username: username || undefined, firstName, lastName, email, password: hash });
     await newUser.save();
-    res.status(201).json({ message: 'User registered. Please check your email.' });
 
+    res.status(201).json({ message: 'User registered. Please check your email.' });
   } catch (err) {
     console.error('Register error:', err);
-    // duplicate‑key guard
     if (err.code === 11000) {
       if (err.keyPattern?.username) {
         return res.status(400).json({ message: 'Username already taken' });
@@ -124,26 +101,20 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
-
-    const isMatch = bcrypt.compareSync(password, user.password);
-    if (!isMatch) {
+    if (!user || !bcrypt.compareSync(password, user.password)) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
     const token = generateToken(user);
     res.json({ token });
-
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-// PROTECTED ROUTE
-app.get('/api/dashboard', (req, res) => {
+// PROTECTED ROUTE (matches client’s fetch('/api/protected'))
+app.get('/api/protected', (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
     return res.status(401).json({ message: 'Unauthorized' });
