@@ -160,7 +160,7 @@ const { MONGO_URI, JWT_SECRET, PORT = 5000 } = process.env
 mongoose
   .connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('✅ Connected to MongoDB'))
-  .catch((err) => {
+  .catch(err => {
     console.error('❌ MongoDB connection error:', err)
     process.exit(1)
   })
@@ -224,18 +224,30 @@ app.post('/auth/login', async (req, res) => {
   }
 })
 
-// Protected dashboard
-app.get('/dashboard', (req, res) => {
+// JWT‑auth middleware
+function authenticateToken(req, res, next) {
   const auth = req.headers.authorization
   if (!auth?.startsWith('Bearer '))
     return res.status(401).json({ message: 'No token provided.' })
-
   try {
-    const decoded = jwt.verify(auth.split(' ')[1], JWT_SECRET)
-    res.json({ message: `Welcome user ${decoded.email}!` })
+    req.user = jwt.verify(auth.split(' ')[1], JWT_SECRET)
+    next()
   } catch {
-    res.status(401).json({ message: 'Invalid token.' })
+    return res.status(401).json({ message: 'Invalid token.' })
   }
+}
+
+// Protected routes
+
+// alias for dashboard logic
+app.get('/dashboard', authenticateToken, (req, res) => {
+  res.json({ message: `Welcome user ${req.user.email}!` })
+})
+
+// new /protected endpoint
+app.get('/protected', authenticateToken, (req, res) => {
+  // once this is reached, client will nav to /dashboard
+  res.json({ ok: true, message: 'Protected reached' })
 })
 
 app.listen(PORT, () => {
