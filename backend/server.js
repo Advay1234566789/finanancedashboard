@@ -1,3 +1,4 @@
+// server.js
 import 'dotenv/config';
 import express from 'express';
 import mongoose from 'mongoose';
@@ -11,21 +12,21 @@ const MONGO_URI = process.env.MONGO_URI;
 const JWT_SECRET = process.env.JWT_SECRET;
 
 // ————————————————————————————————————————————————————————————————————————————————
-// CORS configuration
+// CORS: allow your frontend on render.com
 const corsOptions = {
-  origin: 'https://finanancedashboard-1.onrender.com',  // your frontend origin
-  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization'],
+  origin: 'https://finanancedashboard-1.onrender.com',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   optionsSuccessStatus: 200,
 };
 app.use(cors(corsOptions));
-// enable preflight across-the-board
 app.options('*', cors(corsOptions));
 
-// middleware
+// JSON body parser
 app.use(express.json());
 
-// connect
+// ————————————————————————————————————————————————————————————————————————————————
+// MongoDB connection
 mongoose.connect(MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -33,7 +34,8 @@ mongoose.connect(MONGO_URI, {
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-// user schema
+// ————————————————————————————————————————————————————————————————————————————————
+// User schema + model
 const userSchema = new mongoose.Schema({
   username:   { type: String },
   firstName:  { type: String },
@@ -42,9 +44,12 @@ const userSchema = new mongoose.Schema({
   password:   { type: String, required: true },
 }, { timestamps: true });
 
+// only enforce uniqueness on username when provided
 userSchema.index({ username: 1 }, { unique: true, sparse: true });
+
 const User = mongoose.model('User', userSchema);
 
+// ————————————————————————————————————————————————————————————————————————————————
 // JWT helper
 function generateToken(user) {
   return jwt.sign(
@@ -54,12 +59,14 @@ function generateToken(user) {
   );
 }
 
-// REGISTER
+// ————————————————————————————————————————————————————————————————————————————————
+// AUTH ROUTES
+
+// Register new user
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { username, firstName, lastName, email: rawEmail, password, confirmPassword } = req.body;
     const email = rawEmail?.trim().toLowerCase();
-    console.log('Register attempt:', { email, username, firstName, lastName });
 
     if (!email || !password || !confirmPassword) {
       return res.status(400).json({ message: 'Email and passwords are required' });
@@ -99,7 +106,7 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-// LOGIN
+// Login existing user
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email: rawEmail, password } = req.body;
@@ -122,8 +129,8 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// PROTECTED ROUTE
-app.get('/api/protected', (req, res) => {
+// Example protected route
+app.get('/api/auth/protected', (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
     return res.status(401).json({ message: 'Unauthorized' });
@@ -137,7 +144,8 @@ app.get('/api/protected', (req, res) => {
   }
 });
 
-// start
+// ————————————————————————————————————————————————————————————————————————————————
+// Launch server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
