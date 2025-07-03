@@ -10,6 +10,21 @@ const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI;
 const JWT_SECRET = process.env.JWT_SECRET;
 
+// ————————————————————————————————————————————————————————————————————————————————
+// CORS configuration
+const corsOptions = {
+  origin: 'https://finanancedashboard-1.onrender.com',  // your frontend origin
+  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization'],
+  optionsSuccessStatus: 200,
+};
+app.use(cors(corsOptions));
+// enable preflight across-the-board
+app.options('*', cors(corsOptions));
+
+// middleware
+app.use(express.json());
+
 // connect
 mongoose.connect(MONGO_URI, {
   useNewUrlParser: true,
@@ -17,10 +32,6 @@ mongoose.connect(MONGO_URI, {
 })
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
-
-// middleware
-app.use(cors());
-app.use(express.json());
 
 // user schema
 const userSchema = new mongoose.Schema({
@@ -31,9 +42,7 @@ const userSchema = new mongoose.Schema({
   password:   { type: String, required: true },
 }, { timestamps: true });
 
-// sparse unique index on username
 userSchema.index({ username: 1 }, { unique: true, sparse: true });
-
 const User = mongoose.model('User', userSchema);
 
 // JWT helper
@@ -113,7 +122,7 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// PROTECTED ROUTE (matches client’s fetch('/api/protected'))
+// PROTECTED ROUTE
 app.get('/api/protected', (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
