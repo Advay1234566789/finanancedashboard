@@ -1,4 +1,3 @@
-// server.js
 import 'dotenv/config';
 import express from 'express';
 import mongoose from 'mongoose';
@@ -7,16 +6,16 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT      = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI;
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET= process.env.JWT_SECRET;
 
 // ————————————————————————————————————————————————————————————————————————————————
 // CORS: allow your frontend on render.com
 const corsOptions = {
   origin: 'https://finanancedashboard-1.onrender.com',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization'],
   optionsSuccessStatus: 200,
 };
 app.use(cors(corsOptions));
@@ -28,7 +27,7 @@ app.use(express.json());
 // ————————————————————————————————————————————————————————————————————————————————
 // MongoDB connection
 mongoose.connect(MONGO_URI, {
-  useNewUrlParser: true,
+  useNewUrlParser:    true,
   useUnifiedTopology: true,
 })
   .then(() => console.log('MongoDB connected'))
@@ -37,11 +36,11 @@ mongoose.connect(MONGO_URI, {
 // ————————————————————————————————————————————————————————————————————————————————
 // User schema + model
 const userSchema = new mongoose.Schema({
-  username:   { type: String },
-  firstName:  { type: String },
-  lastName:   { type: String },
-  email:      { type: String, required: true, unique: true },
-  password:   { type: String, required: true },
+  username:  { type: String },
+  firstName: { type: String },
+  lastName:  { type: String },
+  email:     { type: String, required: true, unique: true },
+  password:  { type: String, required: true },
 }, { timestamps: true });
 
 // only enforce uniqueness on username when provided
@@ -76,31 +75,25 @@ app.post('/api/auth/register', async (req, res) => {
     }
 
     if (username) {
-      const existsUsername = await User.findOne({ username });
-      if (existsUsername) {
+      if (await User.findOne({ username })) {
         return res.status(400).json({ message: 'Username already taken' });
       }
     }
 
-    const existsEmail = await User.findOne({ email });
-    if (existsEmail) {
+    if (await User.findOne({ email })) {
       return res.status(400).json({ message: 'Email already in use' });
     }
 
     const hash = bcrypt.hashSync(password, bcrypt.genSaltSync(10));
-    const newUser = new User({ username: username || undefined, firstName, lastName, email, password: hash });
+    const newUser = new User({ username: username||undefined, firstName, lastName, email, password: hash });
     await newUser.save();
 
     res.status(201).json({ message: 'User registered. Please check your email.' });
   } catch (err) {
     console.error('Register error:', err);
     if (err.code === 11000) {
-      if (err.keyPattern?.username) {
-        return res.status(400).json({ message: 'Username already taken' });
-      }
-      if (err.keyPattern?.email) {
-        return res.status(400).json({ message: 'Email already in use' });
-      }
+      if (err.keyPattern?.username) return res.status(400).json({ message: 'Username already taken' });
+      if (err.keyPattern?.email)    return res.status(400).json({ message: 'Email already in use' });
     }
     res.status(500).json({ message: 'Server error' });
   }
@@ -142,6 +135,12 @@ app.get('/api/auth/protected', (req, res) => {
   } catch {
     res.status(401).json({ message: 'Invalid token' });
   }
+});
+
+// ————————————————————————————————————————————————————————————————————————————————
+// Catch‑all 404 (Express 5 wildcard must be named)
+app.all('/*path', (req, res) => {
+  res.status(404).json({ message: 'Route not found' });
 });
 
 // ————————————————————————————————————————————————————————————————————————————————
