@@ -146,106 +146,101 @@
 // // ————————————————————————————————————————————————————————————————————————————————
 
 // server.js
-import 'dotenv/config';
-import express from 'express';
-import mongoose from 'mongoose';
-import cors from 'cors';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import 'dotenv/config'
+import express from 'express'
+import mongoose from 'mongoose'
+import cors from 'cors'
+import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken'
 
-const app = express();
-const { MONGO_URI, JWT_SECRET, PORT = 5000 } = process.env;
+const app = express()
+const { MONGO_URI, JWT_SECRET, PORT = 5000 } = process.env
 
 // Connect to MongoDB Atlas
 mongoose
   .connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('✅ Connected to MongoDB'))
-  .catch(err => {
-    console.error('❌ MongoDB connection error:', err);
-    process.exit(1);
-  });
+  .catch((err) => {
+    console.error('❌ MongoDB connection error:', err)
+    process.exit(1)
+  })
 
 // User schema & model
 const userSchema = new mongoose.Schema({
-  firstName: { type: String, required: false },
-  lastName:  { type: String, required: false },
+  firstName: { type: String },
+  lastName:  { type: String },
   email:     { type: String, required: true, unique: true },
   password:  { type: String, required: true },
-}, { timestamps: true });
+}, { timestamps: true })
 
-const User = mongoose.model('User', userSchema);
+const User = mongoose.model('User', userSchema)
 
 // Middleware
-app.use(cors());            // enable CORS for all origins; adjust options if needed
-app.use(express.json());    // parse JSON bodies
+app.use(cors())         // adjust origin if needed
+app.use(express.json()) // parse JSON bodies
 
-// Registration endpoint
+// Registration
 app.post('/auth/register', async (req, res) => {
-  const { firstName, lastName, email, password, confirmPassword } = req.body;
-
+  const { firstName, lastName, email, password, confirmPassword } = req.body
   if (!email || !password || !confirmPassword)
-    return res.status(400).json({ message: 'Email and passwords are required.' });
-
+    return res.status(400).json({ message: 'Email and passwords are required.' })
   if (password !== confirmPassword)
-    return res.status(400).json({ message: 'Passwords do not match.' });
+    return res.status(400).json({ message: 'Passwords do not match.' })
 
   try {
-    const existing = await User.findOne({ email });
-    if (existing)
-      return res.status(409).json({ message: 'Email already in use.' });
+    if (await User.findOne({ email }))
+      return res.status(409).json({ message: 'Email already in use.' })
 
-    const hash = await bcrypt.hash(password, 12);
-    const user = await User.create({ firstName, lastName, email, password: hash });
-    return res.status(201).json({ message: 'User registered successfully.' });
+    const hash = await bcrypt.hash(password, 12)
+    await User.create({ firstName, lastName, email, password: hash })
+    res.status(201).json({ message: 'User registered successfully.' })
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: 'Server error.' });
+    console.error(err)
+    res.status(500).json({ message: 'Server error.' })
   }
-});
+})
 
-// Login endpoint
+// Login
 app.post('/auth/login', async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password } = req.body
   if (!email || !password)
-    return res.status(400).json({ message: 'Email and password are required.' });
+    return res.status(400).json({ message: 'Email and password are required.' })
 
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email })
     if (!user)
-      return res.status(401).json({ message: 'Invalid credentials.' });
+      return res.status(401).json({ message: 'Invalid credentials.' })
 
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid)
-      return res.status(401).json({ message: 'Invalid credentials.' });
+    if (!(await bcrypt.compare(password, user.password)))
+      return res.status(401).json({ message: 'Invalid credentials.' })
 
-    const payload = { id: user._id, email: user.email };
-    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
-
-    return res.json({ token });
+    const token = jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, {
+      expiresIn: '7d',
+    })
+    res.json({ token })
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: 'Server error.' });
+    console.error(err)
+    res.status(500).json({ message: 'Server error.' })
   }
-});
+})
 
-// A protected example route
+// Protected dashboard
 app.get('/dashboard', (req, res) => {
-  const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith('Bearer '))
-    return res.status(401).json({ message: 'No token provided.' });
+  const auth = req.headers.authorization
+  if (!auth?.startsWith('Bearer '))
+    return res.status(401).json({ message: 'No token provided.' })
 
-  const token = auth.split(' ')[1];
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    return res.json({ message: `Welcome user ${decoded.email}!` });
+    const decoded = jwt.verify(auth.split(' ')[1], JWT_SECRET)
+    res.json({ message: `Welcome user ${decoded.email}!` })
   } catch {
-    return res.status(401).json({ message: 'Invalid token.' });
+    res.status(401).json({ message: 'Invalid token.' })
   }
-});
+})
 
-// Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+  console.log(`🚀 Server running on port ${PORT}`)
+})
+
 
 
