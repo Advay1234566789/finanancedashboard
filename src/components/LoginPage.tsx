@@ -232,9 +232,7 @@
 
 // File: frontend/src/components/LoginPage.jsx
 // src/config.js
-export const API_BASE = import.meta.env.DEV
-  ? '/api'
-  : 'https://finanancedashboard.onrender.com/api';
+
 
 // src/pages/LoginPage.jsx
 import { useState } from 'react';
