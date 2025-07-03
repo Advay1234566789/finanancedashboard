@@ -231,6 +231,12 @@
 // }
 
 // File: frontend/src/components/LoginPage.jsx
+// src/config.js
+export const API_BASE = import.meta.env.DEV
+  ? '/api'
+  : 'https://finanancedashboard.onrender.com/api';
+
+// src/pages/LoginPage.jsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -239,6 +245,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Lock, Mail, User, Sparkles } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { API_BASE } from '@/config';
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -255,13 +262,11 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
 
-    // Debug: log the outgoing payload
     console.log('Sending registration data:', data);
 
-    // Use absolute backend URL or proxy
     const endpoint = isLogin
-      ? 'https://finanancedashboard.onrender.com/api/auth/login'
-      : 'https://finanancedashboard.onrender.com/api/auth/register';
+      ? `${API_BASE}/auth/login`
+      : `${API_BASE}/auth/register`;
 
     try {
       const res = await fetch(endpoint, {
@@ -269,7 +274,6 @@ export default function LoginPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-
       const result = await res.json();
       if (!res.ok) throw new Error(result.message || 'Unknown error');
 
@@ -290,14 +294,11 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-indigo-950 via-purple-900 to-slate-900 relative overflow-hidden">
-      {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-600/20 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-indigo-400/20 to-pink-600/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-violet-400/10 to-cyan-400/10 rounded-full blur-3xl animate-pulse delay-500"></div>
       </div>
-
-      {/* Floating particles */}
       <div className="absolute inset-0 pointer-events-none">
         {[...Array(20)].map((_, i) => (
           <div
@@ -312,11 +313,8 @@ export default function LoginPage() {
           ></div>
         ))}
       </div>
-
       <Card className="w-full max-w-md bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl relative z-10 transition-all duration-500 hover:shadow-3xl hover:bg-white/15">
-        {/* Card glow effect */}
         <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 rounded-lg blur-xl"></div>
-        
         <CardHeader className="text-center relative z-10 pb-8">
           <div className="flex justify-center mb-4">
             <div className="relative">
@@ -335,7 +333,6 @@ export default function LoginPage() {
               : 'Create your account and start your journey with us'}
           </CardDescription>
         </CardHeader>
-        
         <CardContent className="relative z-10">
           <form onSubmit={handleSubmit} className="space-y-6">
             {!isLogin && (
@@ -364,7 +361,6 @@ export default function LoginPage() {
                 </div>
               </div>
             )}
-            
             <div className="relative group">
               <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-blue-300/60 group-focus-within:text-blue-300 transition-colors" />
               <Input
@@ -377,7 +373,6 @@ export default function LoginPage() {
                 className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-blue-100/50 focus:border-blue-400 focus:bg-white/15 transition-all duration-300"
               />
             </div>
-            
             <div className="relative group">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-blue-300/60 group-focus-within:text-blue-300 transition-colors" />
               <Input
@@ -397,7 +392,6 @@ export default function LoginPage() {
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            
             {!isLogin && (
               <div className="relative group">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-blue-300/60 group-focus-within:text-blue-300 transition-colors" />
@@ -412,7 +406,6 @@ export default function LoginPage() {
                 />
               </div>
             )}
-            
             <Button
               type="submit"
               className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white py-3 font-semibold text-lg rounded-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 border-0 relative overflow-hidden group"
@@ -431,7 +424,6 @@ export default function LoginPage() {
               </span>
             </Button>
           </form>
-          
           <div className="mt-8 text-center">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -441,7 +433,6 @@ export default function LoginPage() {
                 <span className="px-4 bg-transparent text-blue-100/60">or</span>
               </div>
             </div>
-            
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
@@ -458,3 +449,4 @@ export default function LoginPage() {
     </div>
   );
 }
+
