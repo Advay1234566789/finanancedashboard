@@ -517,7 +517,7 @@ export default function LoginPage() {
     }
   }
 
-  // If you need to fetch the protected dashboard directly:
+  // Example helper to fetch your protected route
   const callDashboard = async () => {
     try {
       const res = await fetch(`${API_BASE}/dashboard`, {
@@ -533,11 +533,17 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-indigo-950 via-purple-900 to-slate-900 relative overflow-hidden">
-      {/* background blobs & particles */}
+      {/* background effects omitted for brevity */}
       <Card className="w-full max-w-md bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl relative z-10 transition-all duration-500 hover:shadow-3xl hover:bg-white/15">
-        {/* glowing backdrop */}
         <CardHeader className="text-center relative z-10 pb-8">
-          {/* logo & title */}
+          <div className="flex justify-center mb-4">
+            <div className="relative">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                <Sparkles className="h-8 w-8 text-white" />
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 rounded-2xl blur-lg opacity-50 animate-pulse" />
+            </div>
+          </div>
           <CardTitle className="text-3xl font-bold bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent mb-2">
             {isLogin ? 'Welcome Back' : 'Join Us Today'}
           </CardTitle>
@@ -552,28 +558,19 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {!isLogin && (
               <div className="grid grid-cols-2 gap-4">
-                <div className="relative group">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-blue-300/60 group-focus-within:text-blue-300 transition-colors" />
-                  <Input
-                    name="firstName"
-                    placeholder="First Name"
-                    value={data.firstName}
-                    onChange={handleChange}
-                    required
-                    className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-blue-100/50 focus:border-blue-400 focus:bg-white/15 transition-all duration-300"
-                  />
-                </div>
-                <div className="relative group">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-blue-300/60 group-focus-within:text-blue-300 transition-colors" />
-                  <Input
-                    name="lastName"
-                    placeholder="Last Name"
-                    value={data.lastName}
-                    onChange={handleChange}
-                    required
-                    className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-blue-100/50 focus:border-blue-400 focus:bg-white/15 transition-all duration-300"
-                  />
-                </div>
+                {['firstName', 'lastName'].map((field) => (
+                  <div key={field} className="relative group">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-blue-300/60 group-focus-within:text-blue-300 transition-colors" />
+                    <Input
+                      name={field}
+                      placeholder={field === 'firstName' ? 'First Name' : 'Last Name'}
+                      value={data[field]}
+                      onChange={handleChange}
+                      required
+                      className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-blue-100/50 focus:border-blue-400 focus:bg-white/15 transition-all duration-300"
+                    />
+                  </div>
+                ))}
               </div>
             )}
 
@@ -630,18 +627,15 @@ export default function LoginPage() {
               className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white py-3 font-semibold text-lg rounded-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 border-0 relative overflow-hidden group"
               disabled={loading}
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
               <span className="relative z-10">
-                {loading ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    Please wait...
-                  </div>
-                ) : isLogin ? (
-                  'Sign In'
-                ) : (
-                  'Create Account'
-                )}
+                {loading
+                  ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Please wait...
+                    </div>
+                  )
+                  : (isLogin ? 'Sign In' : 'Create Account')}
               </span>
             </Button>
           </form>
@@ -649,7 +643,7 @@ export default function LoginPage() {
           <div className="mt-8 text-center">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/20"></div>
+                <div className="w-full border-t border-white/20" />
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="px-4 bg-transparent text-blue-100/60">or</span>
@@ -663,7 +657,6 @@ export default function LoginPage() {
               <span className="relative z-10">
                 {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
               </span>
-              <div className="absolute inset-0 bg-white/10 rounded-lg scale-0 group-hover:scale-100 transition-transform duration-300 opacity-0 group-hover:opacity-100"></div>
             </button>
           </div>
         </CardContent>
